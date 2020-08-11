@@ -210,3 +210,7 @@ func main() {
 	// render.
 }
 ```
+
+The above code makes the following animation:
+
+![ring.gif](./img/ring.gif)
