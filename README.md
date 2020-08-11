@@ -1,5 +1,10 @@
 # Ring
 
+[![Version](https://img.shields.io/github/v/tag/cgxeiji/ring?sort=semver)](https://github.com/cgxeiji/ring/releases)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/cgxeiji/ring)](https://pkg.go.dev/github.com/cgxeiji/ring)
+[![License](https://img.shields.io/github/license/cgxeiji/ring)](https://github.com/cgxeiji/ring/blob/master/LICENSE)
+![Go version](https://img.shields.io/github/go-mod/go-version/cgxeiji/ring)
+
 Ring is a wrapper of
 [rpi-ws281x-go](https://github.com/rpi-ws281x/rpi-ws281x-go) specialized in
 controlling ring-shaped LEDs.
@@ -15,6 +20,11 @@ to compile this library is to cross-compile using a Docker container.
 Follow the [guide from
 rpi-ws281x-go](https://github.com/rpi-ws281x/rpi-ws281x-go#cross-compiling) to
 learn how.
+
+### Running
+
+Because `rpi-ws281x` needs to access `/dev/mem` to create correct pwm timings,
+you will need to run the compiled binary with root permissions.
 
 
 ## Example
