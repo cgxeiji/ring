@@ -1,6 +1,27 @@
-# ring
+# Ring
+
+Ring is a wrapper of
+[rpi-ws281x-go](https://github.com/rpi-ws281x/rpi-ws281x-go) specialized in
+controlling ring-shaped LEDs.
+
+The library adds the ability to use `layers` to do complex animations. Each
+`layer` supports color transparency and blending is handled automatically.
+
+## Compilation
+
+Compiling directly on a Raspberry Pi might take too long. The recommended way
+to compile this library is to cross-compile using a Docker container.
+
+Follow the [guide from
+rpi-ws281x-go](https://github.com/rpi-ws281x/rpi-ws281x-go#cross-compiling) to
+learn how.
+
 
 ## Example
+
+![ring.gif](./img/ring.gif)
+
+To create the animation above, try the following code:
 
 ```go
 package main
@@ -210,7 +231,3 @@ func main() {
 	// render.
 }
 ```
-
-The above code makes the following animation:
-
-![ring.gif](./img/ring.gif)
