@@ -19,11 +19,9 @@ learn how.
 
 ## Example
 
-> Boss: "Can you make a pulsating white background with colorful rotating lights and a blinking cyan light?"
+> *Boss: "Can you make a pulsating white background with colorful rotating lights and a blinking cyan light?"*
 >
-> you:
->
-> ![ring.gif](./img/ring.gif)
+> *you:* ![ring.gif](./img/ring.gif)
 
 To create the animation above, try the following code:
 
