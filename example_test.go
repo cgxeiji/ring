@@ -1,9 +1,4 @@
-# ring
-
-## Example
-
-```go
-package main
+package ring_test
 
 import (
 	"bufio"
@@ -18,7 +13,7 @@ import (
 	"github.com/cgxeiji/ring"
 )
 
-func main() {
+func Example() {
 	// Initialize the ring.
 	r, err := ring.New(&ring.Options{
 		LedCount:       12,           // adjust this to the number of LEDs you have
@@ -209,4 +204,3 @@ func main() {
 	// ring before exiting. Otherwise, the ring will stay on with the latest
 	// render.
 }
-```
