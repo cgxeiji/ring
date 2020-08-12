@@ -56,19 +56,20 @@ import (
 func main() {
 	// Initialize the ring.
 	r, err := ring.New(&ring.Options{
-		LedCount:       12,           // adjust this to the number of LEDs you have
-		MaxBrightness:  180,          // value from 0 to 255
-		RotationOffset: -math.Pi / 3, // you can set a rotation offset for the ring
+		LedCount:      12,  // adjust this to the number of LEDs you have
+		MaxBrightness: 180, // value from 0 to 255
 	})
+	r.Offset(-math.Pi / 3) // you can set a rotation offset for the ring
 	if err != nil {
 		log.Fatal(err)
 	}
 	// Make sure to properly close the ring.
 	defer r.Close()
 
-	// Create a new layer.  This will be a white background layer that will pulsate.
+	// Create a new layer.  This will be a static white background.
 	bg, err := ring.NewLayer(&ring.LayerOptions{
-		Resolution: 1, // set to 1 pixel because it is a uniform color background
+		Resolution:  1,                 // set to 1 pixel because it is a uniform color background
+		ContentMode: ring.ContentScale, // this scales the pixel to the whole ring
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -77,6 +78,15 @@ func main() {
 	bg.SetAll(color.White)
 	// Add the layer to the ring.
 	r.AddLayer(bg)
+
+	// Create a mask layer.  This will fade the background.
+	bgMask, err := ring.NewLayer(&ring.LayerOptions{
+		Resolution: 1, // set to 1 pixel because it is a uniform mask
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	r.AddLayer(bgMask)
 
 	// Render the ring.
 	if err := r.Render(); err != nil {
@@ -115,7 +125,8 @@ func main() {
 
 	// Create another layer. This will set a pixel that will blink every 500ms.
 	blink, err := ring.NewLayer(&ring.LayerOptions{
-		Resolution: r.Size(), // same resolution of the ring (here: 12)
+		Resolution:  3,                // we are going to set the 3rd pixel (index: 2) to blink
+		ContentMode: ring.ContentCrop, // this crops the layer to avoid repetition
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -160,29 +171,27 @@ func main() {
 	ws.Add(1)
 	go func() {
 		defer ws.Done()
-		c := color.NRGBA{255, 255, 255, 255}
+		c := color.NRGBA{0, 0, 0, 0}
 		step := uint8(5)
 		for {
-			for a := uint8(255); a > 0; a -= step {
+			for a := uint8(0); a < 255; a += step {
+				c.A = a
+				bgMask.SetAll(c)
 				select {
 				case <-done:
 					return
-				default:
+				case render <- struct{}{}:
 				}
-				c.A = a
-				bg.SetAll(c)
-				render <- struct{}{}
 				time.Sleep(20 * time.Millisecond)
 			}
-			for a := uint8(0); a < 255; a += step {
+			for a := uint8(255); a > 0; a -= step {
+				c.A = a
+				bgMask.SetAll(c)
 				select {
 				case <-done:
 					return
-				default:
+				case render <- struct{}{}:
 				}
-				c.A = a
-				bg.SetAll(c)
-				render <- struct{}{}
 				time.Sleep(20 * time.Millisecond)
 			}
 		}
@@ -194,13 +203,12 @@ func main() {
 		defer ws.Done()
 		for {
 			for a := 0.0; a < math.Pi*2; a += 0.01 {
+				triRotate.Rotate(a)
 				select {
 				case <-done:
 					return
-				default:
+				case render <- struct{}{}:
 				}
-				triRotate.Rotate(a)
-				render <- struct{}{}
 				time.Sleep(20 * time.Millisecond)
 			}
 		}
@@ -225,7 +233,11 @@ func main() {
 					blink.SetPixel(2, c)
 					on = true
 				}
-				render <- struct{}{}
+				select {
+				case <-done:
+					return
+				case render <- struct{}{}:
+				}
 			}
 		}
 	}()
