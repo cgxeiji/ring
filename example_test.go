@@ -16,10 +16,10 @@ import (
 func Example() {
 	// Initialize the ring.
 	r, err := ring.New(&ring.Options{
-		LedCount:       12,           // adjust this to the number of LEDs you have
-		MaxBrightness:  180,          // value from 0 to 255
-		RotationOffset: -math.Pi / 3, // you can set a rotation offset for the ring
+		LedCount:      12,  // adjust this to the number of LEDs you have
+		MaxBrightness: 180, // value from 0 to 255
 	})
+	r.Offset(-math.Pi / 3) // you can set a rotation offset for the ring
 	if err != nil {
 		log.Fatal(err)
 	}

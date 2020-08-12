@@ -11,10 +11,11 @@ import (
 
 // Ring represents the WS2811 LED device.
 type Ring struct {
-	device *ws2811.WS2811
-	layers []*Layer
-	ledArc float64
-	opt    *Options
+	device    *ws2811.WS2811
+	layers    []*Layer
+	ledArc    float64
+	ledOffset int
+	opt       *Options
 }
 
 // Options is the list of ring options.
@@ -31,9 +32,6 @@ type Options struct {
 	// is set to 128, and color.RGBA(0, 0, 0, 0) will output led(R: 10, G: 10,
 	// B: 10) if MinBrightness is set to 10.
 	MinBrightness, MaxBrightness int
-	// RotationOffset sets an angular offset (in radians) to render the layers.
-	// A positive angle rotates counter-clockwise.
-	RotationOffset float64
 	// GpioPin is the GPIO pin on the Raspberry Pi with PWM output (default:
 	// GPIO 18). *Do not confuse with the physical pin number*
 	GpioPin int
@@ -77,9 +75,21 @@ func New(options *Options) (*Ring, error) {
 // Render updates the LED ring.
 func (r *Ring) Render() error {
 	for i := range r.device.Leds(0) {
-		pixel := make([]color.Color, 0, len(r.layers))
-		for _, l := range r.layers {
-			pixel = append(pixel, l.led(i, r.opt.RotationOffset/r.ledArc))
+		idx := mod(i+r.ledOffset, r.Size())
+		pixel := make([]color.Color, len(r.layers))
+		for j, l := range r.layers {
+			switch l.opt.ContentMode {
+			case ContentTile:
+				pixel[j] = l.led(idx)
+			case ContentCrop:
+				if idx < l.opt.Resolution {
+					pixel[j] = l.led(idx)
+				} else {
+					pixel[j] = color.Transparent
+				}
+			case ContentScale:
+				pixel[j] = l.led(scale(idx, r.Size(), l.opt.Resolution))
+			}
 		}
 		r.device.Leds(0)[i] = serialize(blendOver(pixel...))
 	}
@@ -108,4 +118,18 @@ func (r *Ring) Close() {
 // Size returns the total number of LEDs of the ring.
 func (r *Ring) Size() int {
 	return r.opt.LedCount
+}
+
+// Offset sets an angular offset (in radians) to render the layers.
+// A positive angle rotates counter-clockwise.
+func (r *Ring) Offset(rotation float64) {
+	if rotation < 0 {
+		r.ledOffset = int(math.Ceil(rotation / r.ledArc))
+	} else {
+		r.ledOffset = int(math.Floor(rotation / r.ledArc))
+	}
+}
+
+func scale(v, fmax, tmax int) int {
+	return v * tmax / fmax
 }

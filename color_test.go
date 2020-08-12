@@ -1,9 +1,44 @@
 package ring
 
 import (
+	"fmt"
 	"image/color"
 	"testing"
 )
+
+func TestMod(t *testing.T) {
+	const n = 12
+	tests := []struct {
+		idx  int
+		want int
+	}{
+		{
+			1,
+			1,
+		},
+		{
+			12,
+			0,
+		},
+		{
+			13,
+			1,
+		},
+		{
+			-1,
+			11,
+		},
+	}
+
+	for _, ts := range tests {
+		t.Run(fmt.Sprintf("%d", ts.idx), func(t *testing.T) {
+			got := mod(ts.idx, n)
+			if got != ts.want {
+				t.Errorf("got: %#v, want: %#v", got, ts.want)
+			}
+		})
+	}
+}
 
 func TestSerialize(t *testing.T) {
 	tests := []struct {
