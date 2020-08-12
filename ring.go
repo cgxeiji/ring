@@ -108,11 +108,16 @@ func (r *Ring) AddLayer(l *Layer) {
 
 // Close turns off the LED ring and closes the device.
 func (r *Ring) Close() {
+	r.TurnOff()
+	r.device.Fini()
+}
+
+// TurnOff tuns off the LED ring without closing the device.
+func (r *Ring) TurnOff() {
 	for i := range r.device.Leds(0) {
 		r.device.Leds(0)[i] = 0
 	}
 	r.device.Render()
-	r.device.Fini()
 }
 
 // Size returns the total number of LEDs of the ring.
