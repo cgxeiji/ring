@@ -84,13 +84,20 @@ func (l *Layer) pixelRotated(i int) (c color.Color) {
 
 	i += int(rotInt)
 
-	c = blendLerp(l.pixel(i), l.pixel(i+1), rotFloat)
+	c = blendLerp(l.pixelRaw(i), l.pixelRaw(i+1), rotFloat)
 
 	return c
 }
 
-func (l *Layer) led(i int) (c color.Color) {
+// Pixel returns the color of the pixel at position i, with layer
+// transformations.
+func (l *Layer) Pixel(i int) (c color.Color) {
 	return l.buffer[mod(i, l.opt.Resolution)]
+}
+
+// Options returns the options of the layer.
+func (l *Layer) Options() *LayerOptions {
+	return l.opt
 }
 
 func (l *Layer) update() {
@@ -99,8 +106,8 @@ func (l *Layer) update() {
 	}
 }
 
-// pixel returns the color of the pixel at position i.
-func (l *Layer) pixel(i int) (c color.Color) {
+// pixelRaw returns the color of the pixelRaw at position i.
+func (l *Layer) pixelRaw(i int) (c color.Color) {
 	return l.pixels[mod(i, l.opt.Resolution)]
 }
 

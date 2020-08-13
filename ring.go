@@ -12,10 +12,18 @@ import (
 // Ring represents the WS2811 LED device.
 type Ring struct {
 	device    *ws2811.WS2811
-	layers    []*Layer
+	layers    []Pixeler
 	ledArc    float64
 	ledOffset int
+	offset    float64
 	opt       *Options
+}
+
+// Pixeler is an interface that returns the color of a pixel at a specific
+// location, with a set resolution.
+type Pixeler interface {
+	Pixel(int) color.Color
+	Options() *LayerOptions
 }
 
 // Options is the list of ring options.
@@ -74,24 +82,30 @@ func New(options *Options) (*Ring, error) {
 
 // Render updates the LED ring.
 func (r *Ring) Render() error {
+	pixels := make([]color.Color, r.Size())
 	for i := range r.device.Leds(0) {
-		idx := mod(i+r.ledOffset, r.Size())
+		idx := i
 		pixel := make([]color.Color, len(r.layers))
 		for j, l := range r.layers {
-			switch l.opt.ContentMode {
+			switch l.Options().ContentMode {
 			case ContentTile:
-				pixel[j] = l.led(idx)
+				pixel[j] = l.Pixel(idx)
 			case ContentCrop:
-				if idx < l.opt.Resolution {
-					pixel[j] = l.led(idx)
+				if idx < l.Options().Resolution {
+					pixel[j] = l.Pixel(idx)
 				} else {
 					pixel[j] = color.Transparent
 				}
 			case ContentScale:
-				pixel[j] = l.led(scale(idx, r.Size(), l.opt.Resolution))
+				pixel[j] = l.Pixel(scale(idx, r.Size(), l.Options().Resolution))
 			}
 		}
-		r.device.Leds(0)[i] = serialize(blendOver(pixel...))
+		pixels[i] = blendOver(pixel...)
+	}
+	for i := range r.device.Leds(0) {
+		rotInt := math.Floor(r.offset)
+		rotFloat := r.offset - rotInt
+		r.device.Leds(0)[i] = serialize(lerp(int(rotInt)+i, pixels, rotFloat))
 	}
 
 	if err := r.device.Render(); err != nil {
@@ -101,8 +115,12 @@ func (r *Ring) Render() error {
 	return nil
 }
 
+func lerp(i int, pixels []color.Color, alpha float64) color.Color {
+	return blendLerp(pixels[mod(i, len(pixels))], pixels[mod(i+1, len(pixels))], alpha)
+}
+
 // AddLayer adds a drawable layer to the ring.
-func (r *Ring) AddLayer(l *Layer) {
+func (r *Ring) AddLayer(l Pixeler) {
 	r.layers = append(r.layers, l)
 }
 
@@ -133,6 +151,7 @@ func (r *Ring) Offset(rotation float64) {
 	} else {
 		r.ledOffset = int(math.Floor(rotation / r.ledArc))
 	}
+	r.offset = rotation / r.ledArc
 }
 
 func scale(v, fmax, tmax int) int {
