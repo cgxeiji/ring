@@ -83,28 +83,28 @@ func New(options *Options) (*Ring, error) {
 // Render updates the LED ring.
 func (r *Ring) Render() error {
 	pixels := make([]color.Color, r.Size())
+	pixel := make([]color.Color, len(r.layers))
+
 	for i := range r.device.Leds(0) {
-		idx := i
-		pixel := make([]color.Color, len(r.layers))
 		for j, l := range r.layers {
 			switch l.Options().ContentMode {
 			case ContentTile:
-				pixel[j] = l.Pixel(idx)
+				pixel[j] = l.Pixel(i)
 			case ContentCrop:
-				if idx < l.Options().Resolution {
-					pixel[j] = l.Pixel(idx)
+				if i < l.Options().Resolution {
+					pixel[j] = l.Pixel(i)
 				} else {
 					pixel[j] = color.Transparent
 				}
 			case ContentScale:
-				pixel[j] = l.Pixel(scale(idx, r.Size(), l.Options().Resolution))
+				pixel[j] = l.Pixel(scale(i, r.Size(), l.Options().Resolution))
 			}
 		}
 		pixels[i] = blendOver(pixel...)
 	}
+	rotInt := math.Floor(r.offset)
+	rotFloat := r.offset - rotInt
 	for i := range r.device.Leds(0) {
-		rotInt := math.Floor(r.offset)
-		rotFloat := r.offset - rotInt
 		r.device.Leds(0)[i] = serialize(lerp(int(rotInt)+i, pixels, rotFloat))
 	}
 

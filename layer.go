@@ -8,10 +8,14 @@ import (
 
 // Layer represents a drawable layer of the LED ring.
 type Layer struct {
-	pixels           []color.Color
-	rotation, pixArc float64 // in radians
-	opt              *LayerOptions
-	buffer           []color.Color
+	pixels []color.Color
+
+	pixArc   float64 // pixel arc in radians
+	rotFloat float64 // float part of rotation in radians
+	rotInt   int     // integer part of rotation in radians
+
+	opt    *LayerOptions
+	buffer []color.Color
 }
 
 // LayerOptions is the list of options of a layer.
@@ -71,20 +75,19 @@ func (l *Layer) SetPixel(i int, c color.Color) {
 
 // Rotate sets the rotation of the layer. A positive angle makes a counter-clockwise rotation.
 func (l *Layer) Rotate(angle float64) {
-	l.rotation = angle
+	rotArc := angle / l.pixArc
+	rotInt := math.Floor(rotArc)
+	l.rotFloat = rotArc - rotInt
+	l.rotInt = int(rotInt)
+
 	l.update()
 }
 
 // pixelRotated returns the color of the pixel at position i adjusted for the
 // rotation of the layer.
 func (l *Layer) pixelRotated(i int) (c color.Color) {
-	rotFloat := l.rotation / l.pixArc
-	rotInt := math.Floor(rotFloat)
-	rotFloat -= rotInt
-
-	i += int(rotInt)
-
-	c = blendLerp(l.pixelRaw(i), l.pixelRaw(i+1), rotFloat)
+	i += l.rotInt
+	c = blendLerp(l.pixelRaw(i), l.pixelRaw(i+1), l.rotFloat)
 
 	return c
 }
